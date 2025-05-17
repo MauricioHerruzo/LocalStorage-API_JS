@@ -4,6 +4,13 @@ const selector = document.querySelector("#selector");
 const body = document.querySelector("body");
 const recipesContainer = document.querySelector("#recipes");
 const recipeModal = document.querySelector("#recipeModal");
+//selectores modal
+const modalTitle = recipeModal.querySelector("h1");
+const p = recipeModal.querySelector("p");
+const ul = recipeModal.querySelector("ul");
+const btnFavourite = recipeModal.querySelector(".favourite");
+
+let savedFavourites = [];
 
 let categoriaSelected = selector.value;
 
@@ -21,11 +28,31 @@ recipesContainer.addEventListener("click", (e)=>{
     //si se hace click en un button de ver más
     if (e.target.dataset.action === "recipeTrigger"){
         const clickedRecipe = e.target;
-        setRecipeModal(clickedRecipe.id, recipeModal);
+        setRecipeModal(clickedRecipe.id);
+        
     }
 })
 
+//manejo de favourite
+recipeModal.addEventListener("click", (e)=>{
+    if(e.target.dataset.action==="favouriteTrigger" || e.target.dataset.action ==="deleteTrigger"){
 
+        const clickedButton = e.target;
+    
+        if(!savedFavourites.includes(clickedButton.id)){
+            savedFavourites = saveAsFavourite(clickedButton.id, savedFavourites);
+            toggleFavouriteButton(clickedButton)
+            console.log(savedFavourites)
+            console.log(clickedButton.id);
+        }else if(savedFavourites.includes(clickedButton.id)){
+            savedFavourites = deleteFromFavourite(clickedButton.id, savedFavourites);
+            toggleRemoveButton(clickedButton);
+            console.log(savedFavourites)
+            console.log(clickedButton.id);
+        }
+
+    }
+})
 
 
 //FUNCTIONS
@@ -121,7 +148,7 @@ function createCard(image, title, id){
     return mealCard;
 }
 
-async function setRecipeModal(id, recipeModal){
+async function setRecipeModal(id){
     try{
         const res = await fetch("https://www.themealdb.com/api/json/v1/1/search.php?s");
         const data = await res.json();
@@ -131,15 +158,36 @@ async function setRecipeModal(id, recipeModal){
         data.meals.forEach(meal => {
 
         if(meal.idMeal === id){
-            const modalTitle = recipeModal.querySelector("h1");
-            const p = recipeModal.querySelector("p");
-            const ul = recipeModal.querySelector("ul");
+
+            //vaciar ul
+            ul.innerHTML = "";
 
             // console.log(modalTitle)
             // console.log(meal.strMeal)
             modalTitle.textContent = meal.strMeal;
             p.textContent = meal.strInstructions;
+            //id al boton de favoritos para facilitar el guardarla 
+            btnFavourite.setAttribute("id", meal.idMeal);
+
+            //set button segun si la id se encuentra
+            if(!savedFavourites.includes( btnFavourite.id)){
+                toggleRemoveButton( btnFavourite )
+            }
+            if(savedFavourites.includes( btnFavourite.id)){
+                toggleFavouriteButton(btnFavourite)
+            }
             
+            for(let i = 1; i <= 20; i++){
+                //El genio de la API no ha hecho los ingredientes en un array asi que hay que buscárselas para recorrerlos
+                let iIngredient = "strIngredient"+i.toString()
+                let iMeasure ="strMeasure"+i.toString();
+                if(meal[iIngredient] !== null & meal[iIngredient] !== " " & meal[iIngredient] !== ""){
+                    const li = document.createElement("li");
+                    li.textContent = meal[iIngredient] + " - " + meal[iMeasure];
+                    ul.appendChild(li);
+
+                }
+            }
 
         }
        
@@ -150,4 +198,34 @@ async function setRecipeModal(id, recipeModal){
         console.log("Intento fallido de conexion con la API");
     }
 
-}         
+}       
+
+
+
+//FUNCTIONS SAVE FAVOURITE
+
+function saveAsFavourite(id, favouritesArray){
+    return [...favouritesArray, id];
+    // console.log(favouritesArray);
+}
+
+function deleteFromFavourite(idParam, favouritesArray){
+    return favouritesArray.filter(id=> id!==idParam);
+    // console.log(favouritesArray);
+}
+
+function toggleFavouriteButton(button){
+    button.classList.remove("btn-primary");
+    button.classList.add("btn-danger");
+    button.textContent = "Eliminar de favoritos";
+    button.dataset.action = "deleteTrigger";
+    // console.log("HE hecho rojo el boton")
+}
+
+function toggleRemoveButton(button){
+    button.classList.remove("btn-danger");
+    button.classList.add("btn-primary");
+    button.textContent = "Añadir a favoritos";
+    button.dataset.action = "favouriteTrigger";
+    // console.log("HE hecho azul el boton")
+}
