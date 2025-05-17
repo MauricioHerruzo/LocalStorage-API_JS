@@ -13,6 +13,7 @@ const ul = recipeModal.querySelector("ul");
 const btnFavourite = recipeModal.querySelector(".favourite");
 
 
+
 let savedFavourites = JSON.parse(localStorage.getItem("savedFavourites")) || [];
 
 
@@ -55,6 +56,7 @@ recipeModal.addEventListener("click", (e)=>{
             localStorage.setItem("savedFavourites",JSON.stringify(savedFavourites));
             savedFavourites = JSON.parse(localStorage.getItem("savedFavourites"))
 
+
             toggleFavouriteButton(clickedButton)
             // console.log(savedFavourites)
             // console.log(clickedButton.id);
@@ -92,6 +94,14 @@ if(favouritesContainer){
         if (e.target.dataset.action === "recipeTrigger"){
             const clickedRecipe = e.target;
             setRecipeModal(clickedRecipe.id);
+        }
+        if(e.target.dataset.action === "deleteFav"){
+            const clickedDeleteButton = e.target;
+            // console.log(clickedDeleteButton.id)
+            savedFavourites = deleteFromFavourite(clickedDeleteButton.id, savedFavourites)
+            localStorage.setItem("savedFavourites",JSON.stringify(savedFavourites));
+            savedFavourites = JSON.parse(localStorage.getItem("savedFavourites"))
+            showFavouriteRecipes(savedFavourites,favouritesContainer);
         }
     })
 }
@@ -151,6 +161,7 @@ function createCard(image, title, id){
     //Crafteo de la card
     let mealCard = document.createElement("div");
     mealCard.classList.add("card");
+    mealCard.classList.add("text-center")
     mealCard.setAttribute("id", id);
     mealCard.style = "width: 25rem"
 
@@ -184,6 +195,20 @@ function createCard(image, title, id){
     buttonCard.setAttribute("data-bs-target", "#recipeModal");
 
     mealCardInfoDiv.appendChild(buttonCard);
+
+    if(favouritesContainer){
+    let deleteButton = document.createElement("button");
+    deleteButton.classList.add("btn");
+    deleteButton.classList.add("btn-danger");
+    deleteButton.classList.add("fs-2")
+    deleteButton.classList.add("my-2")
+    deleteButton.textContent = "Eliminar de favoritos";
+
+    deleteButton.setAttribute("data-action", "deleteFav");
+    deleteButton.setAttribute("id", id)
+
+    mealCardInfoDiv.appendChild(deleteButton);
+    }
     
 
     return mealCard;
@@ -290,3 +315,6 @@ function toggleRemoveButton(button){
     button.dataset.action = "favouriteTrigger";
     // console.log("HE hecho azul el boton")
 }
+
+
+
