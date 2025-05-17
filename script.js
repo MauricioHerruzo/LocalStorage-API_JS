@@ -1,39 +1,48 @@
 'use strict'
 //SELECTORES
+
 const selector = document.querySelector("#selector");
 const body = document.querySelector("body");
 const recipesContainer = document.querySelector("#recipes");
 const recipeModal = document.querySelector("#recipeModal");
+const favouritesContainer = document.querySelector("#favourites");
 //selectores modal
 const modalTitle = recipeModal.querySelector("h1");
 const p = recipeModal.querySelector("p");
 const ul = recipeModal.querySelector("ul");
 const btnFavourite = recipeModal.querySelector(".favourite");
 
-let savedFavourites = [];
 
-let categoriaSelected = selector.value;
+let savedFavourites = JSON.parse(localStorage.getItem("savedFavourites")) || [];
 
-//APP USE
-setCategories();
-selector.addEventListener("change", ()=>{
-    categoriaSelected = selector.value;
-        //    console.log(categoriaSelected);
-    showMeals(categoriaSelected);
 
-});
+// APP USE 
+//comprobar que el elemento exista en la página html que estamos para no saltar errores porque el selector solo existe en el index
+if(selector){
+    let categoriaSelected = selector.value;
+    setCategories();
+    selector.addEventListener("change", ()=>{
+        categoriaSelected = selector.value;
+            //    console.log(categoriaSelected);
+        showMeals(categoriaSelected,recipesContainer);
+    
+    });
 
-//manejo la lógica de los botones por data-action en vez de por sus clases
-recipesContainer.addEventListener("click", (e)=>{
-    //si se hace click en un button de ver más
-    if (e.target.dataset.action === "recipeTrigger"){
-        const clickedRecipe = e.target;
-        setRecipeModal(clickedRecipe.id);
-        
-    }
-})
 
-//manejo de favourite
+    //manejo la lógica de los botones por data-action en vez de por sus clases
+    recipesContainer.addEventListener("click", (e)=>{
+        //si se hace click en un button de ver más
+        if (e.target.dataset.action === "recipeTrigger"){
+            const clickedRecipe = e.target;
+            setRecipeModal(clickedRecipe.id);
+            
+        }
+    })
+
+}
+
+
+//manejo de add/delete favourite
 recipeModal.addEventListener("click", (e)=>{
     if(e.target.dataset.action==="favouriteTrigger" || e.target.dataset.action ==="deleteTrigger"){
 
@@ -41,21 +50,55 @@ recipeModal.addEventListener("click", (e)=>{
     
         if(!savedFavourites.includes(clickedButton.id)){
             savedFavourites = saveAsFavourite(clickedButton.id, savedFavourites);
+
+            //localstorage, reescribir el mismo array 
+            localStorage.setItem("savedFavourites",JSON.stringify(savedFavourites));
+            savedFavourites = JSON.parse(localStorage.getItem("savedFavourites"))
+
             toggleFavouriteButton(clickedButton)
-            console.log(savedFavourites)
-            console.log(clickedButton.id);
+            // console.log(savedFavourites)
+            // console.log(clickedButton.id);
+            
+            //Si estamos en la seccion de favoritos hay que actualizar cada vez que se elimine un fav
+            if(favouritesContainer){
+                showFavouriteRecipes(savedFavourites,favouritesContainer);
+            }
+
         }else if(savedFavourites.includes(clickedButton.id)){
             savedFavourites = deleteFromFavourite(clickedButton.id, savedFavourites);
+
+            //localstorage
+            localStorage.setItem("savedFavourites",JSON.stringify(savedFavourites));
+            savedFavourites = JSON.parse(localStorage.getItem("savedFavourites"))
+
             toggleRemoveButton(clickedButton);
-            console.log(savedFavourites)
-            console.log(clickedButton.id);
+            // console.log(savedFavourites)
+            // console.log(clickedButton.id);
+
+            //Si estamos en la seccion de favoritos hay que actualizar cada vez que se elimine un fav
+            if(favouritesContainer){
+                showFavouriteRecipes(savedFavourites,favouritesContainer);
+            }
         }
 
     }
 })
 
+//Pagina de favoritos
+if(favouritesContainer){
+    showFavouriteRecipes(savedFavourites,favouritesContainer);
+    favouritesContainer.addEventListener("click", (e)=>{
+        //si se hace click en un button de ver más
+        if (e.target.dataset.action === "recipeTrigger"){
+            const clickedRecipe = e.target;
+            setRecipeModal(clickedRecipe.id);
+        }
+    })
+}
 
 //FUNCTIONS
+
+
 
 //FUNCTION SET CATEGORY
 async function setCategories(){
@@ -73,8 +116,6 @@ async function setCategories(){
         mealText.textContent = meal.strCategory;
         selector.appendChild(mealText);
         
-
-
     });
 
     }catch{
@@ -85,7 +126,7 @@ async function setCategories(){
 }
     
 //FUNCTION ENSEÑAR MEALS SEGUN CATEGORY
-async function showMeals(category) {
+async function showMeals(category,container) {
     try{
         const res = await fetch("https://www.themealdb.com/api/json/v1/1/search.php?s");
         const data = await res.json();
@@ -95,7 +136,7 @@ async function showMeals(category) {
 
             if(meal.strCategory === category){
                 let card = createCard(meal.strMealThumb, meal.strMeal, meal.idMeal);
-                recipesContainer.appendChild(card)
+                container.appendChild(card)
                 
             }
         })
@@ -199,6 +240,26 @@ async function setRecipeModal(id){
     }
 
 }       
+
+//Function showFavouriteRecipes
+async function showFavouriteRecipes(arrayFavoritos,container) {
+    try{
+    const res = await fetch("https://www.themealdb.com/api/json/v1/1/search.php?s");
+    const data = await res.json();
+    favouritesContainer.innerHTML= "";
+     data.meals.forEach(meal => {
+        if(arrayFavoritos.includes(meal.idMeal)){
+            let card = createCard(meal.strMealThumb, meal.strMeal, meal.idMeal);
+            container.appendChild(card)
+        }
+     })
+       
+
+    }catch{
+        console.log("Intento fallido de conexion con la API");
+    }
+}
+
 
 
 
