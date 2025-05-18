@@ -18,13 +18,13 @@ let savedFavourites = JSON.parse(localStorage.getItem("savedFavourites")) || [];
 
 
 // APP USE 
+
 //comprobar que el elemento exista en la página html que estamos para no saltar errores porque el selector solo existe en el index
 if(selector){
     let categoriaSelected = selector.value;
     setCategories();
     selector.addEventListener("change", ()=>{
         categoriaSelected = selector.value;
-            //    console.log(categoriaSelected);
         showMeals(categoriaSelected,recipesContainer);
     
     });
@@ -36,7 +36,6 @@ if(selector){
         if (e.target.dataset.action === "recipeTrigger"){
             const clickedRecipe = e.target;
             setRecipeModal(clickedRecipe.id);
-            
         }
     })
 
@@ -52,16 +51,16 @@ recipeModal.addEventListener("click", (e)=>{
         if(!savedFavourites.includes(clickedButton.id)){
             savedFavourites = saveAsFavourite(clickedButton.id, savedFavourites);
 
-            //localstorage, reescribir el mismo array 
-            localStorage.setItem("savedFavourites",JSON.stringify(savedFavourites));
-            savedFavourites = JSON.parse(localStorage.getItem("savedFavourites"))
 
+            //LOCAL STORAGE
+            saveToLocalStorage("savedFavourites", savedFavourites);
+            //sobrescribo con lo que haya en el localstorage siempre
+            savedFavourites = getFromLocalStorage("savedFavourites")
 
+            //Cambio de boton
             toggleFavouriteButton(clickedButton)
-            // console.log(savedFavourites)
-            // console.log(clickedButton.id);
-            
-            //Si estamos en la seccion de favoritos hay que actualizar cada vez que se elimine un fav
+
+            //Si estamos en la seccion de favoritos hay que actualizar cada vez que se elimine un fav para  quitar el card sin recargar la página
             if(favouritesContainer){
                 showFavouriteRecipes(savedFavourites,favouritesContainer);
             }
@@ -69,15 +68,11 @@ recipeModal.addEventListener("click", (e)=>{
         }else if(savedFavourites.includes(clickedButton.id)){
             savedFavourites = deleteFromFavourite(clickedButton.id, savedFavourites);
 
-            //localstorage
-            localStorage.setItem("savedFavourites",JSON.stringify(savedFavourites));
-            savedFavourites = JSON.parse(localStorage.getItem("savedFavourites"))
+            saveToLocalStorage("savedFavourites", savedFavourites);
+            savedFavourites = getFromLocalStorage("savedFavourites")
 
             toggleRemoveButton(clickedButton);
-            // console.log(savedFavourites)
-            // console.log(clickedButton.id);
 
-            //Si estamos en la seccion de favoritos hay que actualizar cada vez que se elimine un fav
             if(favouritesContainer){
                 showFavouriteRecipes(savedFavourites,favouritesContainer);
             }
@@ -86,7 +81,7 @@ recipeModal.addEventListener("click", (e)=>{
     }
 })
 
-//Pagina de favoritos
+//EVENTOS EXCLUSIVOS A PAGINA DE FAVS
 if(favouritesContainer){
     showFavouriteRecipes(savedFavourites,favouritesContainer);
     favouritesContainer.addEventListener("click", (e)=>{
@@ -97,10 +92,11 @@ if(favouritesContainer){
         }
         if(e.target.dataset.action === "deleteFav"){
             const clickedDeleteButton = e.target;
-            // console.log(clickedDeleteButton.id)
             savedFavourites = deleteFromFavourite(clickedDeleteButton.id, savedFavourites)
-            localStorage.setItem("savedFavourites",JSON.stringify(savedFavourites));
-            savedFavourites = JSON.parse(localStorage.getItem("savedFavourites"))
+
+            saveToLocalStorage("savedFavourites", savedFavourites);
+            savedFavourites = getFromLocalStorage("savedFavourites")
+
             showFavouriteRecipes(savedFavourites,favouritesContainer);
         }
     })
@@ -138,17 +134,17 @@ async function setCategories(){
 //FUNCTION ENSEÑAR MEALS SEGUN CATEGORY
 async function showMeals(category,container) {
     try{
-        const res = await fetch("https://www.themealdb.com/api/json/v1/1/search.php?s");
+        const res = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c='+ category );
         const data = await res.json();
+        // console.log(data);
         recipesContainer.innerHTML = "";
         data.meals.forEach( meal => {
-            // console.log(categoriaSelected)
 
-            if(meal.strCategory === category){
-                let card = createCard(meal.strMealThumb, meal.strMeal, meal.idMeal);
-                container.appendChild(card)
+        // console.log(categoriaSelected)
+        let card = createCard(meal.strMealThumb, meal.strMeal, meal.idMeal);
+        container.appendChild(card)
                 
-            }
+
         })
 
     }catch{
@@ -176,7 +172,7 @@ function createCard(image, title, id){
 
     let titleCard = document.createElement("h5");
     titleCard.classList.add("card-title");
-    titleCard.classList.add("fs-1");
+    titleCard.classList.add("fs-2");
     titleCard.classList.add("mb-4");
     titleCard.textContent = title;
     mealCardInfoDiv.appendChild(titleCard);
@@ -216,16 +212,13 @@ function createCard(image, title, id){
 
 async function setRecipeModal(id){
     try{
-        const res = await fetch("https://www.themealdb.com/api/json/v1/1/search.php?s");
+        const res = await fetch('https://www.themealdb.com/api/json/v1/1/lookup.php?i='+id);
         const data = await res.json();
 
         // console.log(data.meals);
 
         data.meals.forEach(meal => {
 
-        if(meal.idMeal === id){
-
-            //vaciar ul
             ul.innerHTML = "";
 
             // console.log(modalTitle)
@@ -255,7 +248,6 @@ async function setRecipeModal(id){
                 }
             }
 
-        }
        
 
     });
@@ -269,16 +261,15 @@ async function setRecipeModal(id){
 //Function showFavouriteRecipes
 async function showFavouriteRecipes(arrayFavoritos,container) {
     try{
-    const res = await fetch("https://www.themealdb.com/api/json/v1/1/search.php?s");
-    const data = await res.json();
-    favouritesContainer.innerHTML= "";
-     data.meals.forEach(meal => {
-        if(arrayFavoritos.includes(meal.idMeal)){
-            let card = createCard(meal.strMealThumb, meal.strMeal, meal.idMeal);
+        container.innerHTML= "";
+
+        for(let favorito of arrayFavoritos){
+            const res = await fetch('https://www.themealdb.com/api/json/v1/1/lookup.php?i='+favorito);
+            const data = await res.json();
+            //Objeto->ArrayUnico->Propiedad
+            let card = createCard(data.meals[0].strMealThumb, data.meals[0].strMeal, data.meals[0].idMeal);
             container.appendChild(card)
         }
-     })
-       
 
     }catch{
         console.log("Intento fallido de conexion con la API");
@@ -316,5 +307,10 @@ function toggleRemoveButton(button){
     // console.log("HE hecho azul el boton")
 }
 
-
-
+//LOCAL STORAGE
+function saveToLocalStorage(itemString, item){
+    localStorage.setItem(itemString,JSON.stringify(item))
+}
+function getFromLocalStorage(itemString){
+    return JSON.parse(localStorage.getItem(itemString));
+}
