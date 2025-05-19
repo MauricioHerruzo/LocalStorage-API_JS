@@ -42,7 +42,7 @@ if(selector){
 }
 
 
-//manejo de add/delete favourite
+//COMUN A AMBOS HTML //manejo de add/delete favourite 
 recipeModal.addEventListener("click", (e)=>{
     if(e.target.dataset.action==="favouriteTrigger" || e.target.dataset.action ==="deleteTrigger"){
 
@@ -102,9 +102,9 @@ if(favouritesContainer){
     })
 }
 
+
+
 //FUNCTIONS
-
-
 
 //FUNCTION SET CATEGORY
 async function setCategories(){
@@ -113,11 +113,9 @@ async function setCategories(){
     const res = await fetch("https://www.themealdb.com/api/json/v1/1/categories.php");
     const data = await res.json();
 
-    // console.log(data.meals);
 
     data.categories.forEach(meal => {
 
-        // console.log(meal.strMeal);
         const mealText = document.createElement("option");
         mealText.textContent = meal.strCategory;
         selector.appendChild(mealText);
@@ -125,7 +123,7 @@ async function setCategories(){
     });
 
     }catch{
-        console.log("Intento fallido de conexion con la API");
+        alert("Intento fallido de conexion con la API");
     }
 
 
@@ -136,11 +134,11 @@ async function showMeals(category,container) {
     try{
         const res = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c='+ category );
         const data = await res.json();
-        // console.log(data);
+
         recipesContainer.innerHTML = "";
         data.meals.forEach( meal => {
 
-        // console.log(categoriaSelected)
+  
         let card = createCard(meal.strMealThumb, meal.strMeal, meal.idMeal);
         container.appendChild(card)
                 
@@ -148,7 +146,7 @@ async function showMeals(category,container) {
         })
 
     }catch{
-        console.log("Intento fallido de conexión con la API");
+        alert("Intento fallido de conexion con la API");
     }
 }
 
@@ -215,14 +213,11 @@ async function setRecipeModal(id){
         const res = await fetch('https://www.themealdb.com/api/json/v1/1/lookup.php?i='+id);
         const data = await res.json();
 
-        // console.log(data.meals);
 
         data.meals.forEach(meal => {
 
             ul.innerHTML = "";
 
-            // console.log(modalTitle)
-            // console.log(meal.strMeal)
             modalTitle.textContent = meal.strMeal;
             p.textContent = meal.strInstructions;
             //id al boton de favoritos para facilitar el guardarla 
@@ -253,7 +248,7 @@ async function setRecipeModal(id){
     });
 
     }catch{
-        console.log("Intento fallido de conexion con la API");
+        alert("Intento fallido de conexion con la API");
     }
 
 }       
@@ -272,7 +267,7 @@ async function showFavouriteRecipes(arrayFavoritos,container) {
         }
 
     }catch{
-        console.log("Intento fallido de conexion con la API");
+        alert("Intento fallido de conexion con la API");
     }
 }
 
@@ -283,12 +278,12 @@ async function showFavouriteRecipes(arrayFavoritos,container) {
 
 function saveAsFavourite(id, favouritesArray){
     return [...favouritesArray, id];
-    // console.log(favouritesArray);
+
 }
 
 function deleteFromFavourite(idParam, favouritesArray){
     return favouritesArray.filter(id=> id!==idParam);
-    // console.log(favouritesArray);
+
 }
 
 function toggleFavouriteButton(button){
@@ -296,7 +291,7 @@ function toggleFavouriteButton(button){
     button.classList.add("btn-danger");
     button.textContent = "Eliminar de favoritos";
     button.dataset.action = "deleteTrigger";
-    // console.log("HE hecho rojo el boton")
+
 }
 
 function toggleRemoveButton(button){
@@ -304,7 +299,7 @@ function toggleRemoveButton(button){
     button.classList.add("btn-primary");
     button.textContent = "Añadir a favoritos";
     button.dataset.action = "favouriteTrigger";
-    // console.log("HE hecho azul el boton")
+
 }
 
 //LOCAL STORAGE
